@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carnet de santé de la femme</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">♡</div>
+      <h2>Carnet de santé<br>de la femme</h2>
+      <p>Votre santé, notre priorité</p>
+    </div>
+    <nav>
+      <a class="active" href="#accueil">⌂ <span>Accueil</span></a>
+      <a href="#profil">♙ <span>Mon profil</span></a>
+      <a href="#vaccination">✚ <span>Vaccination</span></a>
+      <a href="#sein">♡ <span>Suivi santé du sein</span></a>
+      <a href="#rendezvous">▦ <span>Mes rendez-vous</span></a>
+      <a href="#conseils">✧ <span>Conseils santé</span></a>
+    </nav>
+    <div class="sidebar-note">
+      <div class="note-flower">❀</div>
+      <p>Prenez soin de vous,<br>à chaque étape ♡</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Ouvrir le menu">☰</button>
+      <div class="search">⌕ <input id="searchInput" placeholder="Rechercher dans votre carnet..."></div>
+      <div class="top-actions"><span class="bell">♧</span><div class="avatar">A</div><strong>Mon espace</strong></div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="hero" id="accueil">
+      <div class="hero-copy">
+        <span class="eyebrow">VOTRE ESPACE PERSONNEL</span>
+        <h1>Bienvenue dans<br>votre carnet de santé</h1>
+        <p>Un espace confidentiel pour suivre votre santé, vos vaccinations et vos rendez-vous médicaux.</p>
+        <a class="primary-btn" href="#vaccination">Gérer mon suivi <span>→</span></a>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="halo"></div><div class="hero-heart">♡</div><div class="woman-art">♀</div>
+        <span class="spark s1">✦</span><span class="spark s2">✿</span><span class="spark s3">✧</span>
+      </div>
+    </section>
+
+    <section class="quick-grid">
+      <a class="quick-card lilac" href="#vaccination"><span class="quick-icon">✚</span><div><b>Vaccination</b><small>Mes vaccins et rappels</small></div><span class="arrow">↗</span></a>
+      <a class="quick-card pink" href="#sein"><span class="quick-icon">♡</span><div><b>Santé du sein</b><small>Examens et suivi médical</small></div><span class="arrow">↗</span></a>
+      <a class="quick-card blue" href="#rendezvous"><span class="quick-icon">▦</span><div><b>Rendez-vous</b><small>Mon calendrier médical</small></div><span class="arrow">↗</span></a>
+      <a class="quick-card peach" href="#conseils"><span class="quick-icon">✧</span><div><b>Conseils santé</b><small>Bien-être au quotidien</small></div><span class="arrow">↗</span></a>
+    </section>
+
+    <div class="section-heading" id="profil"><div><span class="eyebrow">VUE D'ENSEMBLE</span><h2>Mon tableau de bord</h2></div><span class="today-pill">Aujourd'hui · {{ today }}</span></div>
+    <section class="overview-grid">
+      <article class="panel stat-panel">
+        <div class="panel-title"><span class="icon-circle purple">♡</span><div><h3>Mon espace santé</h3><p>Vos informations en un coup d'œil</p></div></div>
+        <div class="stat-row"><div class="stat-number">{{ vaccines|length }}</div><div><b>Vaccinations enregistrées</b><small>Dans votre carnet</small></div></div>
+        <div class="stat-row"><div class="stat-number">{{ breast|length }}</div><div><b>Examens de suivi</b><small>Santé du sein</small></div></div>
+        <div class="stat-row"><div class="stat-number">{{ appointments|length }}</div><div><b>Rendez-vous</b><small>Enregistrés</small></div></div>
+      </article>
+      <article class="panel reminder-panel">
+        <div class="panel-title"><span class="icon-circle coral">♧</span><div><h3>Mes prochains rappels</h3><p>Dates de suivi renseignées</p></div></div>
+        {% if upcoming_vaccines or upcoming_breast %}
+          {% for v in upcoming_vaccines[:2] %}<div class="reminder-line"><span class="dot purple-dot"></span><div><b>{{ v.vaccine }}</b><small>Rappel vaccination · {{ v.next_date }}</small></div></div>{% endfor %}
+          {% for b in upcoming_breast[:2] %}<div class="reminder-line"><span class="dot pink-dot"></span><div><b>{{ b.exam_type }}</b><small>Prochaine étape · {{ b.next_date }}</small></div></div>{% endfor %}
+        {% else %}
+          <div class="empty-state">Aucun rappel à venir n'est renseigné.<br>Ajoutez une date dans vos suivis ci-dessous.</div>
+        {% endif %}
+      </article>
+    </section>
+
+    <section class="content-section" id="vaccination">
+      <div class="section-heading"><div><span class="eyebrow">PRÉVENTION</span><h2>Mon suivi de vaccination</h2><p>Gardez une trace de vos vaccins et des prochaines doses prévues par votre professionnel de santé.</p></div><span class="section-symbol vaccine-symbol">✚</span></div>
+      <div class="two-col">
+        <article class="panel form-panel">
+          <h3>＋ Ajouter une vaccination</h3>
+          <form action="{{ url_for('add_vaccination') }}" method="post">
+            <label>Nom du vaccin *</label><input name="vaccine" required placeholder="Ex. : HPV, tétanos...">
+            <div class="form-row"><div><label>Numéro de dose</label><input name="dose" placeholder="Ex. : 1ère dose"></div><div><label>Date reçue *</label><input type="date" name="date_received" required></div></div>
+            <label>Date de la prochaine dose (si prévue)</label><input type="date" name="next_date">
+            <label>Notes</label><textarea name="notes" rows="2" placeholder="Centre de vaccination, observations..."></textarea>
+            <button class="primary-btn" type="submit">Enregistrer le vaccin <span>→</span></button>
+          </form>
+        </article>
+        <article class="panel list-panel">
+          <div class="list-header"><h3>Historique des vaccinations</h3><span class="count">{{ vaccines|length }}</span></div>
+          {% if vaccines %}
+            <div class="records">
+            {% for v in vaccines %}
+              <div class="record searchable">
+                <span class="record-icon vaccine-bg">✚</span><div class="record-main"><b>{{ v.vaccine }}</b><small>{{ v.dose or 'Dose non précisée' }} · Reçu le {{ v.date_received }}</small>{% if v.next_date %}<em>Prochaine date : {{ v.next_date }}</em>{% endif %}{% if v.notes %}<small>{{ v.notes }}</small>{% endif %}</div>
+                <form action="{{ url_for('delete_vaccination', item_id=v.id) }}" method="post" onsubmit="return confirm('Supprimer cette entrée ?')"><button class="delete-btn" title="Supprimer">×</button></form>
+              </div>
+            {% endfor %}
+            </div>
+          {% else %}<div class="empty-state">Votre historique est vide pour le moment.</div>{% endif %}
+        </article>
+      </div>
+      <p class="medical-note">ℹ️ Les vaccins recommandés, les doses et leur calendrier dépendent de votre situation et des recommandations locales. Confirmez toujours le calendrier avec un médecin ou un centre de vaccination.</p>
+    </section>
+
+    <section class="content-section" id="sein">
+      <div class="section-heading"><div><span class="eyebrow">DÉPISTAGE ET ACCOMPAGNEMENT</span><h2>Suivi de la santé du sein</h2><p>Centralisez les dates de vos examens et les consignes communiquées par votre équipe médicale.</p></div><span class="section-symbol breast-symbol">♡</span></div>
+      <div class="two-col">
+        <article class="panel form-panel">
+          <h3>＋ Ajouter un examen ou un suivi</h3>
+          <form action="{{ url_for('add_breast_followup') }}" method="post">
+            <label>Type d'examen *</label>
+            <select name="exam_type" required><option value="">Choisir un examen</option><option>Mammographie</option><option>Échographie mammaire</option><option>Consultation clinique</option><option>IRM mammaire</option><option>Autre examen</option></select>
+            <div class="form-row"><div><label>Date de l'examen *</label><input type="date" name="exam_date" required></div><div><label>Prochaine date (si indiquée)</label><input type="date" name="next_date"></div></div>
+            <label>Résultat / compte rendu (résumé)</label><input name="result" placeholder="Résumé fidèle du compte rendu">
+            <label>Prochaine étape indiquée par le médecin</label><input name="next_step" placeholder="Ex. : consultation de contrôle">
+            <label>Professionnel / centre médical</label><input name="doctor" placeholder="Nom du médecin ou du centre">
+            <label>Notes personnelles</label><textarea name="notes" rows="2" placeholder="Questions à poser, document à apporter..."></textarea>
+            <button class="primary-btn" type="submit">Enregistrer le suivi <span>→</span></button>
+          </form>
+        </article>
+        <article class="panel list-panel">
+          <div class="list-header"><h3>Historique du suivi mammaire</h3><span class="count">{{ breast|length }}</span></div>
+          {% if breast %}
+            <div class="records">
+            {% for b in breast %}
+              <div class="record searchable">
+                <span class="record-icon breast-bg">♡</span><div class="record-main"><b>{{ b.exam_type }}</b><small>Examen du {{ b.exam_date }}{% if b.doctor %} · {{ b.doctor }}{% endif %}</small>{% if b.result %}<em>Compte rendu : {{ b.result }}</em>{% endif %}{% if b.next_step %}<small>Étape suivante : {{ b.next_step }}</small>{% endif %}{% if b.next_date %}<small>Prochaine date : {{ b.next_date }}</small>{% endif %}{% if b.notes %}<small>{{ b.notes }}</small>{% endif %}</div>
+                <form action="{{ url_for('delete_breast_followup', item_id=b.id) }}" method="post" onsubmit="return confirm('Supprimer cette entrée ?')"><button class="delete-btn" title="Supprimer">×</button></form>
+              </div>
+            {% endfor %}
+            </div>
+          {% else %}<div class="empty-state">Aucun examen enregistré pour le moment.</div>{% endif %}
+        </article>
+      </div>
+      <div class="awareness-card"><div class="awareness-icon">♡</div><div><b>Un suivi adapté à chaque femme</b><p>Les examens de dépistage et leur fréquence dépendent notamment de l'âge, des antécédents et des facteurs de risque. Cette rubrique sert à organiser vos informations : elle ne remplace ni l'avis médical ni un programme officiel de dépistage.</p></div></div>
+    </section>
+
+    <section class="content-section" id="rendezvous">
+      <div class="section-heading"><div><span class="eyebrow">ORGANISATION</span><h2>Mes rendez-vous médicaux</h2></div><span class="section-symbol calendar-symbol">▦</span></div>
+      <div class="two-col">
+        <article class="panel form-panel">
+          <h3>＋ Ajouter un rendez-vous</h3>
+          <form action="{{ url_for('add_appointment') }}" method="post">
+            <label>Motif *</label><input name="title" required placeholder="Ex. : Consultation gynécologique">
+            <label>Date et heure *</label><input type="datetime-local" name="appointment_date" required>
+            <label>Médecin / établissement</label><input name="doctor" placeholder="Nom du professionnel">
+            <label>Notes</label><textarea name="notes" rows="2" placeholder="Documents à apporter..."></textarea>
+            <button class="primary-btn" type="submit">Ajouter le rendez-vous <span>→</span></button>
+          </form>
+        </article>
+        <article class="panel list-panel">
+          <div class="list-header"><h3>Mon calendrier</h3><span class="count">{{ appointments|length }}</span></div>
+          {% if appointments %}
+            <div class="records">
+            {% for a in appointments %}
+              <div class="record searchable"><span class="record-icon calendar-bg">▦</span><div class="record-main"><b>{{ a.title }}</b><small>{{ a.appointment_date }}{% if a.doctor %} · {{ a.doctor }}{% endif %}</small>{% if a.notes %}<small>{{ a.notes }}</small>{% endif %}</div><form action="{{ url_for('delete_appointment', item_id=a.id) }}" method="post" onsubmit="return confirm('Supprimer ce rendez-vous ?')"><button class="delete-btn" title="Supprimer">×</button></form></div>
+            {% endfor %}
+            </div>
+          {% else %}<div class="empty-state">Aucun rendez-vous enregistré.</div>{% endif %}
+        </article>
+      </div>
+    </section>
+
+    <section class="content-section tips-section" id="conseils">
+      <div class="section-heading"><div><span class="eyebrow">PRENDRE SOIN DE SOI</span><h2>Mes repères santé</h2></div></div>
+      <div class="tips-grid">
+        <div class="tip-card"><span>🌷</span><b>Prévention</b><p>Discutez avec un professionnel des examens et vaccins adaptés à votre situation.</p></div>
+        <div class="tip-card"><span>📁</span><b>Documents</b><p>Conservez vos comptes rendus et apportez-les lors de vos consultations.</p></div>
+        <div class="tip-card"><span>💗</span><b>Écoute de soi</b><p>En cas de changement ou de symptôme qui vous inquiète, demandez un avis médical sans attendre un rappel.</p></div>
+      </div>
+    </section>
+    <footer>♡ Carnet de santé de la femme <span>Un outil d'organisation · Ne remplace pas un avis médical</span></footer>
+  </main>
+</div>
+</body>
+</html>
